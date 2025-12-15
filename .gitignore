@@ -9,7 +9,7 @@ __pycache__/
 *.pdb
 
 # Virtual environment
-# venv/
+venv/
 .venv/
 ENV/
 .env
