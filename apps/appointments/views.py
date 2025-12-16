@@ -27,7 +27,7 @@ from rest_framework.decorators import action
 from apps.consultation_filter.models import DoctorSpeciality
 from apps.eyedental_care.models import EyeVendorAddress , DentalVendorAddress
 from apps.notifications.utils import notify_user
-
+from decimal import Decimal
 from rest_framework import viewsets, status
 
 
@@ -226,6 +226,9 @@ class CheckoutCartAPIView(APIView):
             "final_payable": final_payable,
             "items": CartItemSerializer(items, many=True).data
         })
+    
+
+ 
 
 class ConfirmCheckoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -810,6 +813,10 @@ class AppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NOT Appointment)
         # ---------------------------------------------------------
+        price= doctor.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -834,11 +841,16 @@ class AppointmentToCartAPIView(APIView):
             note=data.get("note"),
 
             consultation_fee = doctor.consultation_fee, 
+            price=price,
+            discount_amount=discount_amount,
+            final_price=final_price,
             slot_confirmed=True,  
             
             created_by=user,
             updated_by=user
         )
+
+
 
         # ---------------------------------------------------------
         # STEP 8: Upload Documents to CartItem (NOT APPOINTMENT)
@@ -872,7 +884,7 @@ class DentalAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 1: Fixed specialization for Dental
         # ---------------------------------------------------------
-        specialization = get_object_or_404(DoctorSpeciality, name="Dentist")
+        specialization = get_object_or_404(DoctorSpeciality, name__iexact="Dentist")
 
         # ---------------------------------------------------------
         # STEP 2: For whom (self / dependant)
@@ -905,14 +917,9 @@ class DentalAppointmentToCartAPIView(APIView):
         vendor = vendor_center.vendor
 
 
-        consultation_fee = data.get("consultation_fee")
-        if consultation_fee:
-            try:
-                consultation_fee = float(consultation_fee)
-            except:
-                return Response({"error": "consultation_fee must be a number"}, status=400)
-        else:
-            consultation_fee = vendor_center.consultation_fee  
+        consultation_fee = Decimal(
+            data.get("consultation_fee") or vendor_center.consultation_fee
+        )
         # ---------------------------------------------------------
         # STEP 4: Validate date & time
         # ---------------------------------------------------------
@@ -960,6 +967,13 @@ class DentalAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NO Appointment model)
         # ---------------------------------------------------------
+
+        price= vendor_center.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
+
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -982,7 +996,9 @@ class DentalAppointmentToCartAPIView(APIView):
             note=data.get("note"),
             mode="In Person",
             slot_confirmed=True, 
-            consultation_fee = consultation_fee,
+            price=price,
+            discount_amount=0,
+            final_price=final_price,
 
             
             created_by=user,
@@ -1016,7 +1032,7 @@ class EyeAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 1: Fixed specialization for Eye
         # ---------------------------------------------------------
-        specialization = get_object_or_404(DoctorSpeciality, name="Dermatology")
+        specialization = get_object_or_404(DoctorSpeciality, name__iexact="Dermatology")
 
         # ---------------------------------------------------------
         # STEP 2: For whom (self / dependant)
@@ -1047,23 +1063,31 @@ class EyeAppointmentToCartAPIView(APIView):
         vendor_center = get_object_or_404(EyeVendorAddress, id=center_id)
         vendor = vendor_center.vendor
 
-        consultation_fee = data.get("consultation_fee")
-        if consultation_fee:
-            try:
-                consultation_fee = float(consultation_fee)
-            except:
-                return Response({"error": "consultation_fee must be a number"}, status=400)
-        else:
-            consultation_fee = vendor_center.consultation_fee  
+        consultation_fee = Decimal(
+            data.get("consultation_fee") or vendor_center.consultation_fee
+        ) 
 
         # ---------------------------------------------------------
         # STEP 4: Validate date & time
         # ---------------------------------------------------------
-        appointment_date = data.get("appointment_date")
-        appointment_time = data.get("appointment_time")
+        from datetime import datetime
 
-        if not appointment_date or not appointment_time:
+        appointment_date = datetime.strptime(
+            data.get("appointment_date"), "%Y-%m-%d"
+            ).date()
+
+        appointment_time = datetime.strptime(
+            data.get("appointment_time"), "%I:%M %p"
+            ).time()
+
+        if not data.get("appointment_date") or not data.get("appointment_time"):
             return Response({"error": "Appointment date and time are required."}, status=400)
+
+        try:
+            appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
+        except ValueError:
+            return Response({"error": "Invalid date or time format"}, status=400)
 
         # ---------------------------------------------------------
         # STEP 5: Slot Check (inside cart only)
@@ -1092,6 +1116,12 @@ class EyeAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NO Appointment model)
         # ---------------------------------------------------------
+
+        price= vendor_center.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -1112,8 +1142,9 @@ class EyeAppointmentToCartAPIView(APIView):
             appointment_date=appointment_date,
             appointment_time=appointment_time,
             note=data.get("note"),
-            consultation_fee = consultation_fee,
-
+            price=price,
+            discount_amount=0,
+            final_price=final_price,
             slot_confirmed=True,  
 
             created_by=user,

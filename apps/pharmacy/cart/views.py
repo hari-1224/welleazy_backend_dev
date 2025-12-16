@@ -43,6 +43,14 @@ class AddToCartAPIView(APIView):
         # Vendor auto-assigned from medicine
         vendor = medicine.vendor
 
+        # Duplicate Check----
+
+        if CartItem.objects.filter(cart=cart , medicine=medicine).exists():
+            return Response(
+                {"message":"Medicine already Exists in the cart"},
+                status=400
+            )
+
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             medicine=medicine,
