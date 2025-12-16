@@ -509,7 +509,7 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
 
     def _parse_time(self, s):
         try:
-            return datetime.strptime(s, "%H:%M").time()
+            return datetime.strptime(s, "%I:%M %p").time()
         except Exception:
             raise ValueError("Invalid time format. Use HH:MM (24-hour)")
 
@@ -629,8 +629,8 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
                         "mode": mode,
                         "date": d.isoformat(),
                         "day_of_week": weekday,
-                        "start_time": s_time.strftime("%H:%M:%S"),
-                        "end_time": e_time.strftime("%H:%M:%S"),
+                        "start_time": s_time.strftime("%I:%M %p"),
+                        "end_time": e_time.strftime("%I:%M %p"),
                         # slot_duration left to default or can be added from request
                     }
                     # if user provided slot_duration at top level, set it
@@ -759,7 +759,7 @@ class AppointmentToCartAPIView(APIView):
             ).date()
 
         appointment_time = datetime.strptime(
-            data.get("appointment_time"), "%H:%M"
+            data.get("appointment_time"), "%I:%M %p"
             ).time()
 
         if not data.get("appointment_date") or not data.get("appointment_time"):
@@ -767,7 +767,7 @@ class AppointmentToCartAPIView(APIView):
 
         try:
             appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
-            appointment_time = datetime.strptime(data.get("appointment_time"), "%H:%M").time()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
         # ---------------------------------------------------------
@@ -924,7 +924,7 @@ class DentalAppointmentToCartAPIView(APIView):
             ).date()
 
         appointment_time = datetime.strptime(
-            data.get("appointment_time"), "%H:%M"
+            data.get("appointment_time"), "%I:%M %p"
             ).time()
 
         if not data.get("appointment_date") or not data.get("appointment_time"):
@@ -932,7 +932,7 @@ class DentalAppointmentToCartAPIView(APIView):
 
         try:
             appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
-            appointment_time = datetime.strptime(data.get("appointment_time"), "%H:%M").time()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
         # ---------------------------------------------------------
@@ -1159,7 +1159,7 @@ class RescheduleAppointmentAPIView(APIView):
 
         try:
             new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
-            new_time = datetime.strptime(new_time_str, "%H:%M").time()
+            new_time = datetime.strptime(new_time_str, "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
 
@@ -1246,8 +1246,8 @@ class AvailableLabSlotsAPIView(APIView):
 
 
             result.append({
-                "start_time": start_time.strftime("%H:%M"),
-                "end_time": s["end_time"].strftime("%H:%M"),
+                "start_time": start_time.strftime("%I:%M %p"),
+                "end_time": s["end_time"].strftime("%I:%M %p"),
                 "capacity": center.slot_capacity,
                 "booked": booked,
                 "available": available,
@@ -1295,7 +1295,7 @@ class SelectLabSlotAPIView(APIView):
 
         # Convert time
         try:
-            time_obj = datetime.strptime(time_str, "%H:%M").time()
+            time_obj = datetime.strptime(time_str, "%I:%M %p").time()
         except:
             return Response({"error": "Invalid time format"}, status=400)
 
@@ -1347,7 +1347,7 @@ class SelectLabSlotAPIView(APIView):
             "cart_item_id": item.id,
             "item_type": item.item_type,
             "selected_date": item.selected_date.isoformat(),
-            "selected_time": item.selected_time.strftime("%H:%M")
+            "selected_time": item.selected_time.strftime("%I:%M %p")
         }, status=200)
 
 class RescheduleLabSlotAPIView(APIView):
@@ -1383,7 +1383,7 @@ class RescheduleLabSlotAPIView(APIView):
 
         try:
             new_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            new_time = datetime.strptime(time_str, "%H:%M").time()
+            new_time = datetime.strptime(time_str, "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date/time format"}, status=400)
 
