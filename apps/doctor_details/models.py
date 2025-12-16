@@ -44,6 +44,7 @@ class DoctorProfessionalDetails(BaseModel):
     vendor = models.ForeignKey(Vendor, on_delete=models.SET_NULL, null=True, related_name="doctors")
     specialization = models.ForeignKey(DoctorSpeciality, on_delete=models.SET_NULL, null=True, related_name="doctors")
     language = models.ForeignKey(Language, on_delete=models.SET_NULL, null=True, related_name="doctors")
+    qualification=models.CharField(max_length=100,null=True , blank=True)
 
     experience_years = models.IntegerField(default=0)
     consultation_fee = models.DecimalField(max_digits=8, decimal_places=2, default=0)
