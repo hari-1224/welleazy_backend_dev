@@ -22,6 +22,7 @@ class InsurancePolicyDocumentSerializer(serializers.ModelSerializer):
 
 class InsuranceFloaterMemberSerializer(serializers.ModelSerializer):
     dependant_data = serializers.SerializerMethodField()
+    patient_name = serializers.SerializerMethodField()
 
     class Meta:
         model = InsuranceFloaterMember
@@ -30,16 +31,22 @@ class InsuranceFloaterMemberSerializer(serializers.ModelSerializer):
     def get_dependant_data(self, obj):
         if obj.is_self:
             user = obj.policy.user
-            return {
-                "id": user.id,
-                "name": getattr(user, "name", user.name),
-                "relationship": "Self"
-            }
+            return None
 
         if obj.dependant:
             return DependantSerializer(obj.dependant).data
 
         return None
+
+    def get_patient_name(self, obj):
+        if obj.is_self:
+            user = obj.policy.user
+            return getattr(user, "name", user.name) or user.username
+        
+        if obj.dependant:
+            return obj.dependant.name
+            
+        return "Unknown"
 
 
 class InsurancePolicyRecordSerializer(DependantResolverMixin,
@@ -63,6 +70,7 @@ class InsurancePolicyRecordSerializer(DependantResolverMixin,
             # "for_whom",
             "dependant",
             "dependant_data",
+            "patient_name",
 
             "is_self_included",
 
@@ -97,43 +105,7 @@ class InsurancePolicyRecordSerializer(DependantResolverMixin,
         ]
         read_only_fields = ("created_at", "updated_at", "created_by", "updated_by")
 
-    def get_dependant_data(self, obj):
 
-        request = self.context.get("request")
-
-        if obj.plan_type == "floater":
-            # floater–level "dependant_data" not super meaningful,
-            # keep consistent with individual mode:
-            if obj.for_whom == "self":
-                user = getattr(request, "user", None)
-                if not user:
-                    return None
-                return {
-                    "id": user.id,
-                    "name": getattr(user, "name", None)
-                    or getattr(user, "username", ""),
-                    "relationship": "Self",
-                }
-            if obj.dependant:
-                return DependantSerializer(obj.dependant).data
-            return None
-
-        # individual policy
-        if obj.for_whom == "self":
-            user = getattr(request, "user", None)
-            if not user:
-                return None
-            return {
-                "id": user.id,
-                "name": getattr(user, "name", None)
-                or getattr(user, "username", ""),
-                "relationship": "Self",
-            }
-
-        if obj.dependant:
-            return DependantSerializer(obj.dependant).data
-
-        return None
 
 
 # ---------- input payload serializers ----------

@@ -19,7 +19,7 @@ class MedicalBillRecordSerializer(DependantResolverMixin, serializers.ModelSeria
     class Meta:
         model = MedicalBillRecord
         fields = [
-            "id", "for_whom", "dependant", "dependant_data",
+            "id", "for_whom", "dependant", "dependant_data", "patient_name",
             "bill_type", "record_name", "record_date",
             "record_bill_number", "record_hospital_name",
             "notes", "documents",

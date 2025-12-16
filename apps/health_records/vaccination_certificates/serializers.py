@@ -20,7 +20,7 @@ class VaccinationCertificateRecordSerializer(DependantResolverMixin, serializers
         model = VaccinationCertificateRecord
         fields = [
             "id",
-            "for_whom", "dependant", "dependant_data",
+            "for_whom", "dependant", "dependant_data", "patient_name",
 
             "vaccination_date",
             "vaccination_name",

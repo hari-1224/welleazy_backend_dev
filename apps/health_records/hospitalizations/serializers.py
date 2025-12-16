@@ -21,7 +21,7 @@ class HospitalizationRecordSerializer(DependantResolverMixin, serializers.ModelS
     class Meta:
         model = HospitalizationRecord
         fields = [
-            "id", "for_whom", "dependant", "dependant_data",
+            "id", "for_whom", "dependant", "dependant_data", "patient_name",
             "hospitalization_type", "record_name",
             "hospital_name", "admitted_date", "discharged_date",
             "doctor_name", "notes",

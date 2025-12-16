@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from .models import HealthPackage
 from apps.labtest.models import Test
-from apps.labtest.serializers import TestSerializer
+from apps.labtest.models import Test
 
 class HealthPackageSerializer(serializers.ModelSerializer):
     test_ids = serializers.PrimaryKeyRelatedField(
@@ -10,7 +10,7 @@ class HealthPackageSerializer(serializers.ModelSerializer):
         source='tests',
         write_only=True
     )
-    tests = TestSerializer(read_only=True, many=True)
+    tests = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
 
     class Meta:
         model = HealthPackage

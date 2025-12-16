@@ -5,6 +5,7 @@ class DependantResolverMixin(serializers.Serializer):
 
     dependant = serializers.SerializerMethodField()
     dependant_data = serializers.SerializerMethodField()
+    patient_name = serializers.SerializerMethodField()
 
     def get_dependant(self, obj):
 
@@ -15,28 +16,34 @@ class DependantResolverMixin(serializers.Serializer):
     def get_dependant_data(self, obj):
         request = self.context.get("request")
 
-        # For Self
         if obj.for_whom == "self":
-            user = request.user if request else None
-            if not user:
-                return None
-
-            name = (
-                getattr(user, "first_name", None)
-                or getattr(user, "full_name", None)
-                or getattr(user, "name", None)
-                or user.email
-                or user.username
-            )
-
-            return {
-                "id": user.id,
-                "name": name,
-                "relationship": "Self"
-            }
+            return None
 
         # For dependant
         if obj.dependant:
             return DependantSerializer(obj.dependant).data
 
         return None
+
+    def get_patient_name(self, obj):
+        request = self.context.get("request")
+        
+        # 1. Self logic
+        if obj.for_whom == "self":
+            user = request.user if request else getattr(obj, "user", None) 
+            # Fallback if obj has .user (some models might)
+            
+            if user:
+                 return (
+                    getattr(user, "first_name", None)
+                    or getattr(user, "full_name", None) # if custom user model
+                    or getattr(user, "name", None)
+                    or user.email
+                )
+            return "Self"
+
+        # 2. Dependant logic
+        if obj.dependant:
+            return obj.dependant.name
+            
+        return "Unknown"
