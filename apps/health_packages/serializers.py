@@ -1,7 +1,6 @@
 from rest_framework import serializers
 from .models import HealthPackage
 from apps.labtest.models import Test
-from apps.labtest.models import Test
 
 class HealthPackageSerializer(serializers.ModelSerializer):
     test_ids = serializers.PrimaryKeyRelatedField(
