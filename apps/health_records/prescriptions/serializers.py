@@ -34,7 +34,7 @@ class PrescriptionRecordSerializer(DependantResolverMixin, serializers.ModelSeri
     class Meta:
         model = PrescriptionRecord
         fields = [
-            "id", "for_whom", "dependant", "dependant_data",
+            "id", "for_whom", "dependant", "dependant_data", "patient_name",
             "record_type", "record_name",
             "doctor_name", "doctor_specialization", "specialization_data",
             "record_date", "reason",
@@ -57,7 +57,7 @@ class ParameterInputSerializer(serializers.Serializer):
 
 
 class RecordPayloadSerializer(serializers.Serializer):
-    """Serializer for creating/updating prescription records with optional parameters"""
+    # Serializer for creating/updating prescription records with optional parameters
     record_id = serializers.IntegerField(required=False)
     record_date = serializers.DateField()
     record_type = serializers.CharField()

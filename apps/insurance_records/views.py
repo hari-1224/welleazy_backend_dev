@@ -23,6 +23,8 @@ from .serializers import (
     InsurancePolicyPayloadSerializer,
     InsuranceFloaterMemberSerializer,
     InsurancePolicyDocumentSerializer,
+    MedicalCardSerializer,
+
 )
 
 
@@ -234,7 +236,7 @@ class InsurancePolicyRecordViewSet(SaveUserMixin, viewsets.ModelViewSet):
     # DOCUMENT UPLOAD 
     @action(detail=True, methods=["post"], url_path="documents", parser_classes=[MultiPartParser])
     def add_document(self, request, pk=None):
-        """Upload one or more documents to a policy"""
+        # Upload one or more documents to a policy
         policy = self.get_object()
 
         files = (
@@ -290,3 +292,18 @@ class InsurancePolicyRecordViewSet(SaveUserMixin, viewsets.ModelViewSet):
             "renewal_frequency": dict(InsurancePolicyRecord.RENEWAL_FREQUENCY_CHOICES),
             "renewal_reminder_type": dict(InsurancePolicyRecord.REMINDER_TYPE_CHOICES),
         })
+
+    @action(detail=False, methods=["get"], url_path="medical_cards")
+    def medical_cards(self, request):
+        # Get list of uploaded medical cards (documents) for all active policies
+        
+        # Filter documents where the parent policy belongs to the user and is not deleted
+        documents = InsurancePolicyDocument.objects.filter(
+            policy__user=request.user,
+            policy__deleted_at__isnull=True,
+            deleted_at__isnull=True
+        ).select_related('policy')
+        
+        serializer = MedicalCardSerializer(documents, many=True, context={'request': request})
+        return Response(serializer.data)
+

@@ -1,44 +1,21 @@
 from .base import *
+import os
 
+# Security
 DEBUG = False
 
-ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS", "").split(",")
-
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.getenv("DB_NAME"),
-        'USER': os.getenv("DB_USER"),
-        'PASSWORD': os.getenv("DB_PASSWORD"),
-        'HOST': os.getenv("DB_HOST"),
-        'PORT': os.getenv("DB_PORT", "5432"),
-    }
-}
-
-
-import os
-from dotenv import load_dotenv
-load_dotenv()
-
-CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
-CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
-
-
+# Static Files
+# STATIC_ROOT is where collectstatic will collect files for deployment
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-#client API settings for production
-CLIENT_API_TOKEN = os.getenv("CLIENT_API_TOKEN")
+# Security Settings
+SECURE_SSL_REDIRECT = True
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SECURE_BROWSER_XSS_FILTER = True
+SECURE_CONTENT_TYPE_NOSNIFF = True
 
-CLIENT_CITY_API_URL = os.getenv("CLIENT_CITY_API_URL")
-CLIENT_TEST_API_URL = os.getenv("CLIENT_TEST_API_URL")
-CLIENT_DIAGNOSTIC_API_URL = os.getenv("CLIENT_DIAGNOSTIC_API_URL")
-CLIENT_VISIT_TYPE_API_URL = os.getenv("CLIENT_VISIT_TYPE_API_URL")
-CLIENT_HEALTH_PACKAGE_API_URL = os.getenv("CLIENT_HEALTH_PACKAGE_API_URL")
-CLIENT_SPONSORED_PACKAGE_API_URL = os.getenv("CLIENT_SPONSORED_PACKAGE_API_URL")
+# CORS Settings
+CORS_ALLOW_ALL_ORIGINS = False
+CORS_ALLOWED_ORIGINS = os.getenv("CORS_ALLOWED_ORIGINS", "").split(",")
 
-
-CLIENT_DOCTORSPECIALITY_API_URL=os.getenv("CLIENT_DOCTORSPECIALITY_API_URL",None)
-CLIENT_LANGUAGE_API_URL=os.getenv("CLIENT_LANGUAGE_API_URL",None)
-CLIENT_PINCODE_API_URL=os.getenv("CLIENT_PINCODE_API_URL",None)
-CLIENT_DOCTOR_URL=os.getenv("CLIENT_DOCTOR_URL",None)
-CLIENT_VENDOR_URL=os.getenv("CLIENT_VENDOR_URL",None)

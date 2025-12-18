@@ -21,7 +21,7 @@ class HospitalizationRecordSerializer(DependantResolverMixin, serializers.ModelS
     class Meta:
         model = HospitalizationRecord
         fields = [
-            "id", "for_whom", "dependant", "dependant_data",
+            "id", "for_whom", "dependant", "dependant_data", "patient_name",
             "hospitalization_type", "record_name",
             "hospital_name", "admitted_date", "discharged_date",
             "doctor_name", "notes",
@@ -35,7 +35,7 @@ class HospitalizationRecordSerializer(DependantResolverMixin, serializers.ModelS
 
 
 class HospitalizationPayloadSerializer(serializers.Serializer):
-    """Serializer for creating/updating hospitalization records (without documents)"""
+    # Serializer for creating/updating hospitalization records (without documents)
 
     record_id = serializers.IntegerField(required=False)
 

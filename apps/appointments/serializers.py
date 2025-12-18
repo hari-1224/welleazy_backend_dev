@@ -20,8 +20,6 @@ from apps.eyedental_care.models import EyeVendorAddress , DentalVendorAddress
 
 from apps.appointments.models import CartItem
 from apps.consultation_filter.models import DoctorSpeciality
-from .models import Appointment
-
 
 
 
@@ -98,14 +96,13 @@ class CartItemSerializer(serializers.ModelSerializer):
     # )
 
     # ---- READ FIELDS ----
-    diagnostic_center = DiagnosticCenterSerializer(read_only=True)
-    tests = TestSerializer(read_only=True, many=True)
-    doctor= DoctorProfessionalDetailsSerializer(read_only=True )
-    health_package = HealthPackageSerializer(read_only=True)
-    sponsored_package = SponsoredPackageSerializer(read_only=True)
-    dependant = DependantSerializer(read_only=True)
-    doctor=DoctorProfessionalDetailsSerializer(read_only=True)
-    doctor_personal = DoctorPersonalDetailsSerializer(source="doctor_appointment.doctor.doctor", read_only=True)
+    diagnostic_center = serializers.PrimaryKeyRelatedField(read_only=True)
+    tests = serializers.PrimaryKeyRelatedField(read_only=True, many=True)
+    doctor = serializers.PrimaryKeyRelatedField(read_only=True)
+    health_package = serializers.PrimaryKeyRelatedField(read_only=True)
+    sponsored_package = serializers.PrimaryKeyRelatedField(read_only=True)
+    dependant = serializers.PrimaryKeyRelatedField(read_only=True)
+    visit_type = serializers.PrimaryKeyRelatedField(read_only=True)
     discount_amount = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
     final_price = serializers.DecimalField(max_digits=10, decimal_places=2, read_only=True)
 
@@ -121,7 +118,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             "health_package", "health_package_id",
             "sponsored_package" , "sponsored_package_id",
             "doctor" , "doctor_id",
-            "doctor_personal",
+            "doctor" , "doctor_id",
             "for_whom", "dependant", "dependant_id",
             "address_id", "note", "price", "discount_amount", "final_price", "created_at",
         ]

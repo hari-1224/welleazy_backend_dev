@@ -20,14 +20,14 @@ from .utils import generate_time_slots_for_center, get_slot_booked_count
 from datetime import datetime, time, timedelta
 from django.utils import timezone
 from django.db.models import Count
-from .models import CartItem, DiagnosticCenter ,  ReportDocument
+from .models import DiagnosticCenter ,  ReportDocument
 from django.db import transaction
 from .serializers import DoctorAppointmentToCartSerializer , DentalAppointmentToCartSerializer , EyeAppointmentToCartSerializer , AppointmentVoucherSerializer
 from rest_framework.decorators import action
 from apps.consultation_filter.models import DoctorSpeciality
 from apps.eyedental_care.models import EyeVendorAddress , DentalVendorAddress
 from apps.notifications.utils import notify_user
-
+from decimal import Decimal
 from rest_framework import viewsets, status
 
 
@@ -226,6 +226,9 @@ class CheckoutCartAPIView(APIView):
             "final_payable": final_payable,
             "items": CartItemSerializer(items, many=True).data
         })
+    
+
+ 
 
 class ConfirmCheckoutAPIView(APIView):
     permission_classes = [IsAuthenticated]
@@ -509,14 +512,13 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
 
     def _parse_time(self, s):
         try:
-            return datetime.strptime(s, "%H:%M").time()
+            return datetime.strptime(s, "%I:%M %p").time()
         except Exception:
             raise ValueError("Invalid time format. Use HH:MM (24-hour)")
 
     def _generate_slots(self, start_t: time, end_t: time, slot_minutes: int):
-        """Yield (start_time, end_time) times as time objects (non-overlapping).
-           end_t is exclusive (last slot must fit fully).
-        """
+        # Yield (start_time, end_time) times as time objects (non-overlapping).
+        # end_t is exclusive (last slot must fit fully).
         if slot_minutes <= 0:
             raise ValueError("slot_duration must be > 0")
         start_dt = datetime.combine(date.today(), start_t)
@@ -629,8 +631,8 @@ class DoctorAvailabilityViewSet(viewsets.ModelViewSet):
                         "mode": mode,
                         "date": d.isoformat(),
                         "day_of_week": weekday,
-                        "start_time": s_time.strftime("%H:%M:%S"),
-                        "end_time": e_time.strftime("%H:%M:%S"),
+                        "start_time": s_time.strftime("%I:%M %p"),
+                        "end_time": e_time.strftime("%I:%M %p"),
                         # slot_duration left to default or can be added from request
                     }
                     # if user provided slot_duration at top level, set it
@@ -759,7 +761,7 @@ class AppointmentToCartAPIView(APIView):
             ).date()
 
         appointment_time = datetime.strptime(
-            data.get("appointment_time"), "%H:%M"
+            data.get("appointment_time"), "%I:%M %p"
             ).time()
 
         if not data.get("appointment_date") or not data.get("appointment_time"):
@@ -767,7 +769,7 @@ class AppointmentToCartAPIView(APIView):
 
         try:
             appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
-            appointment_time = datetime.strptime(data.get("appointment_time"), "%H:%M").time()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
         # ---------------------------------------------------------
@@ -811,6 +813,10 @@ class AppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NOT Appointment)
         # ---------------------------------------------------------
+        price= doctor.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -835,11 +841,16 @@ class AppointmentToCartAPIView(APIView):
             note=data.get("note"),
 
             consultation_fee = doctor.consultation_fee, 
+            price=price,
+            discount_amount=discount_amount,
+            final_price=final_price,
             slot_confirmed=True,  
             
             created_by=user,
             updated_by=user
         )
+
+
 
         # ---------------------------------------------------------
         # STEP 8: Upload Documents to CartItem (NOT APPOINTMENT)
@@ -873,7 +884,7 @@ class DentalAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 1: Fixed specialization for Dental
         # ---------------------------------------------------------
-        specialization = get_object_or_404(DoctorSpeciality, name="Dentist")
+        specialization = get_object_or_404(DoctorSpeciality, name__iexact="Dentist")
 
         # ---------------------------------------------------------
         # STEP 2: For whom (self / dependant)
@@ -906,14 +917,9 @@ class DentalAppointmentToCartAPIView(APIView):
         vendor = vendor_center.vendor
 
 
-        consultation_fee = data.get("consultation_fee")
-        if consultation_fee:
-            try:
-                consultation_fee = float(consultation_fee)
-            except:
-                return Response({"error": "consultation_fee must be a number"}, status=400)
-        else:
-            consultation_fee = vendor_center.consultation_fee  
+        consultation_fee = Decimal(
+            data.get("consultation_fee") or vendor_center.consultation_fee
+        )
         # ---------------------------------------------------------
         # STEP 4: Validate date & time
         # ---------------------------------------------------------
@@ -924,7 +930,7 @@ class DentalAppointmentToCartAPIView(APIView):
             ).date()
 
         appointment_time = datetime.strptime(
-            data.get("appointment_time"), "%H:%M"
+            data.get("appointment_time"), "%I:%M %p"
             ).time()
 
         if not data.get("appointment_date") or not data.get("appointment_time"):
@@ -932,7 +938,7 @@ class DentalAppointmentToCartAPIView(APIView):
 
         try:
             appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
-            appointment_time = datetime.strptime(data.get("appointment_time"), "%H:%M").time()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
         # ---------------------------------------------------------
@@ -961,6 +967,13 @@ class DentalAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NO Appointment model)
         # ---------------------------------------------------------
+
+        price= vendor_center.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
+
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -983,7 +996,9 @@ class DentalAppointmentToCartAPIView(APIView):
             note=data.get("note"),
             mode="In Person",
             slot_confirmed=True, 
-            consultation_fee = consultation_fee,
+            price=price,
+            discount_amount=0,
+            final_price=final_price,
 
             
             created_by=user,
@@ -1017,7 +1032,7 @@ class EyeAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 1: Fixed specialization for Eye
         # ---------------------------------------------------------
-        specialization = get_object_or_404(DoctorSpeciality, name="Dermatology")
+        specialization = get_object_or_404(DoctorSpeciality, name__iexact="Dermatology")
 
         # ---------------------------------------------------------
         # STEP 2: For whom (self / dependant)
@@ -1048,23 +1063,31 @@ class EyeAppointmentToCartAPIView(APIView):
         vendor_center = get_object_or_404(EyeVendorAddress, id=center_id)
         vendor = vendor_center.vendor
 
-        consultation_fee = data.get("consultation_fee")
-        if consultation_fee:
-            try:
-                consultation_fee = float(consultation_fee)
-            except:
-                return Response({"error": "consultation_fee must be a number"}, status=400)
-        else:
-            consultation_fee = vendor_center.consultation_fee  
+        consultation_fee = Decimal(
+            data.get("consultation_fee") or vendor_center.consultation_fee
+        ) 
 
         # ---------------------------------------------------------
         # STEP 4: Validate date & time
         # ---------------------------------------------------------
-        appointment_date = data.get("appointment_date")
-        appointment_time = data.get("appointment_time")
+        from datetime import datetime
 
-        if not appointment_date or not appointment_time:
+        appointment_date = datetime.strptime(
+            data.get("appointment_date"), "%Y-%m-%d"
+            ).date()
+
+        appointment_time = datetime.strptime(
+            data.get("appointment_time"), "%I:%M %p"
+            ).time()
+
+        if not data.get("appointment_date") or not data.get("appointment_time"):
             return Response({"error": "Appointment date and time are required."}, status=400)
+
+        try:
+            appointment_date = datetime.strptime(data.get("appointment_date"), "%Y-%m-%d").date()
+            appointment_time = datetime.strptime(data.get("appointment_time"), "%I:%M %p").time()
+        except ValueError:
+            return Response({"error": "Invalid date or time format"}, status=400)
 
         # ---------------------------------------------------------
         # STEP 5: Slot Check (inside cart only)
@@ -1093,6 +1116,12 @@ class EyeAppointmentToCartAPIView(APIView):
         # ---------------------------------------------------------
         # STEP 7: Create CartItem (NO Appointment model)
         # ---------------------------------------------------------
+
+        price= vendor_center.consultation_fee
+        discount_amount=0
+        final_price= price-discount_amount
+
+
         cart_item = CartItem.objects.create(
             cart=cart,
             user=user,
@@ -1113,8 +1142,9 @@ class EyeAppointmentToCartAPIView(APIView):
             appointment_date=appointment_date,
             appointment_time=appointment_time,
             note=data.get("note"),
-            consultation_fee = consultation_fee,
-
+            price=price,
+            discount_amount=0,
+            final_price=final_price,
             slot_confirmed=True,  
 
             created_by=user,
@@ -1159,7 +1189,7 @@ class RescheduleAppointmentAPIView(APIView):
 
         try:
             new_date = datetime.strptime(new_date_str, "%Y-%m-%d").date()
-            new_time = datetime.strptime(new_time_str, "%H:%M").time()
+            new_time = datetime.strptime(new_time_str, "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date or time format"}, status=400)
 
@@ -1246,8 +1276,8 @@ class AvailableLabSlotsAPIView(APIView):
 
 
             result.append({
-                "start_time": start_time.strftime("%H:%M"),
-                "end_time": s["end_time"].strftime("%H:%M"),
+                "start_time": start_time.strftime("%I:%M %p"),
+                "end_time": s["end_time"].strftime("%I:%M %p"),
                 "capacity": center.slot_capacity,
                 "booked": booked,
                 "available": available,
@@ -1295,7 +1325,7 @@ class SelectLabSlotAPIView(APIView):
 
         # Convert time
         try:
-            time_obj = datetime.strptime(time_str, "%H:%M").time()
+            time_obj = datetime.strptime(time_str, "%I:%M %p").time()
         except:
             return Response({"error": "Invalid time format"}, status=400)
 
@@ -1347,7 +1377,7 @@ class SelectLabSlotAPIView(APIView):
             "cart_item_id": item.id,
             "item_type": item.item_type,
             "selected_date": item.selected_date.isoformat(),
-            "selected_time": item.selected_time.strftime("%H:%M")
+            "selected_time": item.selected_time.strftime("%I:%M %p")
         }, status=200)
 
 class RescheduleLabSlotAPIView(APIView):
@@ -1383,7 +1413,7 @@ class RescheduleLabSlotAPIView(APIView):
 
         try:
             new_date = datetime.strptime(date_str, "%Y-%m-%d").date()
-            new_time = datetime.strptime(time_str, "%H:%M").time()
+            new_time = datetime.strptime(time_str, "%I:%M %p").time()
         except ValueError:
             return Response({"error": "Invalid date/time format"}, status=400)
 

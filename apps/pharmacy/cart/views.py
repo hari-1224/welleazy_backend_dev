@@ -43,6 +43,14 @@ class AddToCartAPIView(APIView):
         # Vendor auto-assigned from medicine
         vendor = medicine.vendor
 
+        # Duplicate Check----
+
+        if CartItem.objects.filter(cart=cart , medicine=medicine).exists():
+            return Response(
+                {"message":"Medicine already Exists in the cart"},
+                status=400
+            )
+
         item, created = CartItem.objects.get_or_create(
             cart=cart,
             medicine=medicine,
@@ -248,10 +256,7 @@ class SelectAddressForCartAPIView(APIView):
         return Response({"message": "Shipping address selected for cart"}, status=200)
 
 class AddNewAddressAPIView(APIView):
-    """
-    Creates address for authenticated user (self).
-    Accepts address_type_id refers to AddressType.id
-    """
+    # Creates address for authenticated user (self).
 
     def post(self, request):
         user = request.user

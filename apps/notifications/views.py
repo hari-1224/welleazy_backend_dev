@@ -65,7 +65,7 @@ class UserNotificationsAPIView(APIView):
 
         # ----- PAGINATION -----
 
-        pagination = paginate_queryset(qs , page , page_size)
+        pagination = paginate_queryset(qs , request)
         paginated_qs= pagination ["results"]
 
         data = [{
@@ -81,7 +81,7 @@ class UserNotificationsAPIView(APIView):
                          "unread": unread,
                          "page":pagination["page"], 
                          "page_size": pagination["page_size"] ,
-                         "totl":pagination["total"] ,
+                         
                          "total_pages":pagination["total_pages"],
                          "notifications": data})
 
