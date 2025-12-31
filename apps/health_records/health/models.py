@@ -14,7 +14,7 @@ class HeightRecord(BaseModel):
         related_name="height_records"
     )
     value = models.FloatField()
-    unit = models.CharField(max_length=5, choices=UNIT_CHOICES, default="cm")
+    unit = models.CharField(max_length=5)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -36,7 +36,7 @@ class WeightRecord(BaseModel):
         related_name="weight_records"
     )
     value = models.FloatField()
-    unit = models.CharField(max_length=5, choices=UNIT_CHOICES, default="kg")
+    unit = models.CharField(max_length=5)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -49,6 +49,7 @@ class WeightRecord(BaseModel):
 class BmiRecord(BaseModel):
     UNIT_CHOICES = (
         ("BMI", "Body Mass Index"),
+        ("kg/m²", "Kilograms per square meter"),
     )
     user = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -56,7 +57,7 @@ class BmiRecord(BaseModel):
         related_name="bmi_records"
     )
     value = models.FloatField(help_text="Body Mass Index value")
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="BMI")
+    unit = models.CharField(max_length=10)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -75,7 +76,7 @@ class BloodPressureRecord(BaseModel):
     )
 
     UNIT_CHOICES = (
-        ("mmhg", "MMHG"),
+        ("mmHg", "MMHG"),
     )
 
     user = models.ForeignKey(
@@ -85,8 +86,8 @@ class BloodPressureRecord(BaseModel):
     )
     systolic = models.PositiveIntegerField(help_text="Systolic pressure (upper value)")
     diastolic = models.PositiveIntegerField(help_text="Diastolic pressure (lower value)")
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="mmhg")
-    type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="normal")
+    unit = models.CharField(max_length=10)
+    type = models.CharField(max_length=20)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -122,7 +123,7 @@ class HeartRateRecord(BaseModel):
         related_name="heart_rate_records"
     )
     value = models.PositiveIntegerField()
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="bpm")
+    unit = models.CharField(max_length=10)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -143,7 +144,7 @@ class OxygenSaturationRecord(BaseModel):
         related_name="oxygen_saturation_records"
     )
     value = models.FloatField(help_text="Oxygen saturation percentage")
-    unit = models.CharField(max_length=5, choices=UNIT_CHOICES, default="%")
+    unit = models.CharField(max_length=5)
 
     class Meta:
         ordering = ["-updated_at"]
@@ -155,7 +156,7 @@ class OxygenSaturationRecord(BaseModel):
     
 class GlucoseRecord(BaseModel):
     UNIT_CHOICES = (
-        ("mg/dl", "Milligrams per Deciliter"),
+        ("mg/dL", "Milligrams per Deciliter"),
         ("mmol/l", "Millimoles per Liter"),
     )
 
@@ -171,8 +172,8 @@ class GlucoseRecord(BaseModel):
         related_name="glucose_records"
     )
     value = models.FloatField(help_text="Blood glucose value")
-    unit = models.CharField(max_length=10, choices=UNIT_CHOICES, default="mg/dl")
-    test_type = models.CharField(max_length=20, choices=TYPE_CHOICES, default="fasting")
+    unit = models.CharField(max_length=10)
+    test_type = models.CharField(max_length=20)
 
     class Meta:
         ordering = ["-updated_at"]

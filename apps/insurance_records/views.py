@@ -38,7 +38,15 @@ class InsurancePolicyRecordViewSet(SaveUserMixin, viewsets.ModelViewSet):
         qs = InsurancePolicyRecord.objects.filter(
             user=self.request.user,
             deleted_at__isnull=True,
+        ).select_related(
+            "user",
+            "dependant"
+        ).prefetch_related(
+            "floater_members",
+            "floater_members__dependant",
+            "documents"
         ).order_by("-created_at")
+        
         qs = filter_by_effective_user(qs, self.request)
         return qs
 
